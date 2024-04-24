@@ -11,8 +11,8 @@ const FormSchema = z.object({
     invalid_type_error: 'Please select a customer.',
   }),
   amount: z.coerce
-      .number()
-      .gt(0, { message: 'Please enter an amount greater than $0.' }),
+    .number()
+    .gt(0, { message: 'Please enter an amount greater than $0.' }),
   status: z.enum(['pending', 'paid'], {
     invalid_type_error: 'Please select an invoice status.',
   }),
@@ -32,12 +32,15 @@ export type State = {
 };
 
 export async function createInvoice(prevState: State, formData: FormData) {
+  console.log('1 ????????');
   // Validate form using Zod
   const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
+
+  console.log('2 ????????', validatedFields);
 
   // If form validation fails, return errors early. Otherwise, continue.
   if (!validatedFields.success) {
@@ -55,9 +58,9 @@ export async function createInvoice(prevState: State, formData: FormData) {
   // Insert data into the database
   try {
     await sql`
-      INSERT INTO invoices (customer_id, amount, status, date)
-      VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-    `;
+            INSERT INTO invoices (customer_id, amount, status, date)
+            VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+        `;
   } catch (error) {
     // If a database error occurs, return a more specific error.
     return {
