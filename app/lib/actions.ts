@@ -29,18 +29,16 @@ export type State = {
     status?: string[];
   };
   message?: string | null;
+  id?: string;
 };
 
 export async function createInvoice(prevState: State, formData: FormData) {
-  console.log('1 ????????');
   // Validate form using Zod
   const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
-
-  console.log('2 ????????', validatedFields);
 
   // If form validation fails, return errors early. Otherwise, continue.
   if (!validatedFields.success) {
@@ -73,14 +71,23 @@ export async function createInvoice(prevState: State, formData: FormData) {
   redirect('/dashboard/invoices');
 }
 
-export async function updateInvoice(id: string, formData: FormData) {
-  const { customerId, amount, status } = UpdateInvoice.parse({
+export async function updateInvoice(prevState: State, formData: FormData) {
+  const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
 
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Invoice.',
+    };
+  }
+
+  const { customerId, amount, status } = validatedFields.data;
   const amountInCents = amount * 100;
+  const date = new Date().toISOString().split('T')[0];
 
   try {
     await sql`
@@ -88,7 +95,7 @@ export async function updateInvoice(id: string, formData: FormData) {
             SET customer_id = ${customerId},
                 amount      = ${amountInCents},
                 status      = ${status}
-            WHERE id = ${id}
+            WHERE id = ${prevState.id}
         `;
   } catch (error) {
     return {
